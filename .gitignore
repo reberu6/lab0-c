@@ -8,6 +8,7 @@ fmtscan
 core*
 .cmd_history
 .out
+*.swp
 
 # ctags files
 TAGS
