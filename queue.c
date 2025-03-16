@@ -53,16 +53,38 @@ bool q_insert_head(struct list_head *head, char *s)
     for (int i = 0; i < len; i++)
         *(value + i) = *(s + i);
     new->value = value;
+    new->list.prev = head;
     new->list.next = head->next;
-    head->next = &new->list;
-    new->list.prev = head->next->prev;
     head->next->prev = &new->list;
+    head->next = &new->list;
     return true;
 }
 
 /* Insert an element at tail of queue */
 bool q_insert_tail(struct list_head *head, char *s)
 {
+    if (!head)
+        return false;
+    int len = 0;
+    while (*(s + len) != '\0') {
+        len++;
+    }
+    len++;
+    char *value = malloc(len);
+    if (!value)
+        return false;
+    element_t *new = malloc(sizeof(element_t));
+    if (!new) {
+        free(value);
+        return false;
+    }
+    for (int i = 0; i < len; i++)
+        *(value + i) = *(s + i);
+    new->value = value;
+    new->list.next = head;
+    new->list.prev = head->prev;
+    head->prev->next = &new->list;
+    head->prev = &new->list;
     return true;
 }
 
