@@ -100,9 +100,12 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
     tmp->list.next = NULL;
     tmp->list.prev = NULL;
     if (sp) {
-        for (int i = 0; i < bufsize - 1; i++)
+        int i = 0;
+        while (i < bufsize - 1 && (tmp->value[i] != '\0')) {
             sp[i] = tmp->value[i];
-        sp[bufsize - 1] = '\0';
+            i++;
+        }
+        sp[i] = '\0';
     }
     return tmp;
 }
@@ -119,9 +122,12 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
     tmp->list.prev = NULL;
     tmp->list.next = NULL;
     if (sp) {
-        for (int i = 0; i < bufsize - 1; i++)
+        int i = 0;
+        while (i < bufsize - 1 && (tmp->value[i] != '\0')) {
             sp[i] = tmp->value[i];
-        sp[bufsize - 1] = '\0';
+            i++;
+        }
+        sp[i] = '\0';
     }
     return tmp;
 }
