@@ -110,7 +110,20 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
 /* Remove an element from tail of queue */
 element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
 {
-    return NULL;
+    if (!head || (head->next == head))
+        return NULL;
+    head->prev->prev->next = head;
+    element_t *tmp =
+        (element_t *) ((char *) head->prev - offsetof(element_t, list));
+    head->prev = head->prev->prev;
+    tmp->list.prev = NULL;
+    tmp->list.next = NULL;
+    if (sp) {
+        for (int i = 0; i < bufsize - 1; i++)
+            sp[i] = tmp->value[i];
+        sp[bufsize - 1] = '\0';
+    }
+    return tmp;
 }
 
 /* Return number of elements in queue */
