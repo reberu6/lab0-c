@@ -4,6 +4,14 @@
 
 #include "queue.h"
 
+/* Convert a list_head pointer to its containing element_t pointer */
+static element_t *list_to_element(struct list_head *pos)
+{
+    if (!pos)
+        return NULL;
+    return (element_t *) ((char *) pos - offsetof(element_t, list));
+}
+
 /* Create an empty queue */
 struct list_head *q_new()
 {
@@ -173,7 +181,43 @@ bool q_delete_mid(struct list_head *head)
 /* Delete all nodes that have duplicate string */
 bool q_delete_dup(struct list_head *head)
 {
-    // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
+    if (!head || head->next == head)
+        return false;
+
+    // true for one node
+    if (head->next->next == head)
+        return true;
+
+    // more than two nodes
+    struct list_head *a, *b;
+    a = head->next;
+    b = head;
+    while (a != b) {
+        b = a->next;
+        element_t *ae = list_to_element(a);
+        bool clear = false;
+        while (b != head) {
+            // compare the strings of a & b
+            element_t *be = list_to_element(b);
+            if (strcmp(ae->value, be->value) == 0) {
+                b->prev->next = b->next;
+                b->next->prev = b->prev;
+                b = b->next;
+                free(be->value);
+                free(be);
+                clear = true;
+            } else
+                b = b->next;
+        }
+        if (clear) {
+            a->prev->next = a->next;
+            a->next->prev = a->prev;
+            a = a->next;
+            free(ae->value);
+            free(ae);
+        } else
+            a = a->next;
+    }
     return true;
 }
 
