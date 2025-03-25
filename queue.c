@@ -266,7 +266,63 @@ void q_reverse(struct list_head *head)
 /* Reverse the nodes of the list k at a time */
 void q_reverseK(struct list_head *head, int k)
 {
-    // https://leetcode.com/problems/reverse-nodes-in-k-group/
+    if (!head || head->next == head || head->next->next == head || k < 2)
+        return;
+
+    // Calculate the number of groups & nodes
+    int n = 0;
+    struct list_head *current = head->next;
+    while (current != head) {
+        current = current->next;
+        n++;
+    }
+    int g = n / k;
+
+    // Handle k > n
+    if (k > n)
+        return;
+
+    // Initialization
+    struct list_head *a, *b, *tmp;
+    b = head->next;
+    tmp = NULL;
+
+    // Reverse each group
+    for (int i = 0; i < g; i++) {
+        a = b->next;
+        b = a->next;
+        // Save the group's tail
+        struct list_head *tail = a->prev;
+        tail->prev = a;
+        // Reverse k nodes in current group
+        int j = 0;
+        while (true) {
+            a->next = a->prev;
+            if (j < k - 2) {
+                a->prev = b;
+                a = b;
+                b = b->next;
+                j++;
+            } else
+                break;
+        }
+        // Connect the head node to the first group' head
+        if (!i) {
+            head->next = a;
+            a->prev = head;
+        }
+        // Connect the previous group's tail to this group's head
+        if (i) {
+            tmp->next = a;
+            a->prev = tmp;
+        }
+        // Save this group's tail for the next group
+        tmp = tail;
+    }
+    // After reversing g groups, link the last group's tail to the remaining
+    // nodes
+    tmp->next = b;
+    b->prev = tmp;
 }
 
 /* Sort elements of queue in ascending/descending order */
