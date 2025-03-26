@@ -332,16 +332,94 @@ void q_sort(struct list_head *head, bool descend) {}
  * the right side of it */
 int q_ascend(struct list_head *head)
 {
-    // https://leetcode.com/problems/remove-nodes-from-linked-list/
-    return 0;
+    if (!head || head->next == head)
+        return 0;
+    if (head->next->next == head)
+        return 1;
+
+    // Initialization
+    struct list_head *t, *a, *b;
+    a = head;
+    b = a->next;
+    t = b->next;
+    bool delete = 0;
+    while (b->next != head) {
+        if (!delete) {
+            a = a->next;
+            b = a->next;
+            t = b->next;
+        } else {
+            b = t;
+            t = t->next;
+        }
+        const element_t *ae = list_to_element(a);
+        element_t *be = list_to_element(b);
+        delete = strcmp(ae->value, be->value) > 0 ? 1 : 0;
+        if (delete) {
+            a->next = t;
+            t->prev = a;
+            free(be->value);
+            free(be);
+            if (t == head)
+                break;
+        }
+    }
+
+    // Count number of the nodes
+    int n = 0;
+    struct list_head *current = head;
+    while (current->next != head) {
+        current = current->next;
+        n++;
+    }
+    return n;
 }
 
 /* Remove every node which has a node with a strictly greater value anywhere to
  * the right side of it */
 int q_descend(struct list_head *head)
 {
-    // https://leetcode.com/problems/remove-nodes-from-linked-list/
-    return 0;
+    if (!head || head->next == head)
+        return 0;
+    if (head->next->next == head)
+        return 1;
+
+    // Initialization
+    struct list_head *t, *a, *b;
+    b = head;
+    a = b->prev;
+    t = a->prev;
+    bool delete = 0;
+    while (a->prev != head) {
+        if (!delete) {
+            b = b->prev;
+            a = b->prev;
+            t = a->prev;
+        } else {
+            a = t;
+            t = t->prev;
+        }
+        element_t *ae = list_to_element(a);
+        const element_t *be = list_to_element(b);
+        delete = strcmp(ae->value, be->value) < 0 ? 1 : 0;
+        if (delete) {
+            t->next = b;
+            b->prev = t;
+            free(ae->value);
+            free(ae);
+            if (t == head)
+                break;
+        }
+    }
+
+    // Count number of the nodes
+    int n = 0;
+    struct list_head *current = head;
+    while (current->next != head) {
+        current = current->next;
+        n++;
+    }
+    return n;
 }
 
 /* Merge all the queues into one sorted queue, which is in ascending/descending
