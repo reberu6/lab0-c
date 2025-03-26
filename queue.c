@@ -326,7 +326,56 @@ void q_reverseK(struct list_head *head, int k)
 }
 
 /* Sort elements of queue in ascending/descending order */
-void q_sort(struct list_head *head, bool descend) {}
+void q_sort(struct list_head *head, bool descend)
+{
+    if (!head || head->next == head || head->next->next == head)
+        return;
+
+    int n = 0;
+    struct list_head *current = head;
+    while (current->next != head) {
+        current = current->next;
+        n++;
+    }
+
+    // Bubble sort
+    for (int i = n - 1; i > 0; i--) {
+        // Initialize pointers for each pass
+        struct list_head *a, *b, *h;
+        h = head;
+        a = h->next;
+        b = a->next;
+        bool swapped = false;
+
+        // Compare and swap adjacent nodes
+        for (int j = 0; j < i; j++) {
+            // Move to the next pair
+            if (j) {
+                h = h->next;
+                a = h->next;
+                b = a->next;
+            }
+            // Compare a & b's string
+            const element_t *ae = list_to_element(a);
+            const element_t *be = list_to_element(b);
+            bool swap = descend ? strcmp(ae->value, be->value) < 0
+                                : strcmp(ae->value, be->value) > 0;
+
+            // Swap
+            if (swap) {
+                h->next = b;
+                b->prev = h;
+                a->next = b->next;
+                b->next->prev = a;
+                b->next = a;
+                a->prev = b;
+                swapped = true;
+            }
+        }
+        if (!swapped)
+            break;
+    }
+}
 
 /* Remove every node which has a node with a strictly less value anywhere to
  * the right side of it */
