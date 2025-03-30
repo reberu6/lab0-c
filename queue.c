@@ -12,6 +12,18 @@ static element_t *list_to_element(struct list_head *pos)
     return (element_t *) ((char *) pos - offsetof(element_t, list));
 }
 
+/* Count the number of the nodes */
+static int count_node(struct list_head *head)
+{
+    int n = 0;
+    struct list_head *current = head;
+    while (current->next != head) {
+        current = current->next;
+        n++;
+    }
+    return n;
+}
+
 /* Create an empty queue */
 struct list_head *q_new()
 {
@@ -470,11 +482,72 @@ int q_descend(struct list_head *head)
     }
     return n;
 }
+/* Convert a list_head pointer to its containing queue_contex_t pointer */
+static queue_contex_t *list_to_qc(struct list_head *pos)
+{
+    return (queue_contex_t *) ((char *) pos - offsetof(queue_contex_t, chain));
+}
 
 /* Merge all the queues into one sorted queue, which is in ascending/descending
  * order */
 int q_merge(struct list_head *head, bool descend)
 {
-    // https://leetcode.com/problems/merge-k-sorted-lists/
-    return 0;
+    if (!head || head->next == head)
+        return 0;
+    // Single queue: do nothing, only return its node count
+    if (head->next->next == head)
+        return count_node(list_to_qc(head->next)->q);
+
+    // Count number of the queues to merge
+    int n = count_node(head);
+
+    struct list_head *tmpb = head->next->next;
+    // Merge n queues into the first queue
+    for (int i = 0; i < n - 1; i++) {
+        // Get the two queues to merge
+        queue_contex_t *qa = list_to_qc(head->next);
+        queue_contex_t *qb = list_to_qc(tmpb);
+        struct list_head *ha, *hb, *a, *b, *c;
+        ha = qa->q;
+        hb = qb->q;
+        a = ha->next;
+        b = hb->next;
+        c = ha;
+
+        // Merge two sorted queeus into ha
+        while (a != ha && b != hb) {
+            const element_t *ae = list_to_element(a);
+            const element_t *be = list_to_element(b);
+            // Compare based on ascend/descend order
+            bool de = descend ? strcmp(ae->value, be->value) > 0
+                              : strcmp(ae->value, be->value) < 0;
+            if (de) {
+                c->next = a;
+                a->prev = c;
+                a = a->next;
+            } else {
+                c->next = b;
+                b->prev = c;
+                b = b->next;
+            }
+            c = c->next;
+        }
+        // Link remaining nodes
+        if (a == ha) {
+            c->next = b;
+            b->prev = c;
+            hb->prev->next = ha;
+            ha->prev = hb->prev;
+        } else {
+            c->next = a;
+            a->prev = c;
+        }
+        // Let b become a NULL-queue
+        hb->next = hb;
+        hb->prev = hb;
+        // Move tmpb to the next queue
+        tmpb = tmpb->next;
+    }
+    // Return the node count of the first queue
+    return count_node(list_to_qc(head->next)->q);
 }
