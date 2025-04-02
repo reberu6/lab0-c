@@ -24,6 +24,46 @@ static int count_node(struct list_head *head)
     return n;
 }
 
+static void merge_two(struct list_head *ha, struct list_head *hb, bool descend)
+{
+    struct list_head *a, *b, *c;
+    a = ha->next;
+    b = hb->next;
+    c = ha;
+
+    // Merge two sorted queeus into ha
+    while (a != ha && b != hb) {
+        const element_t *ae = list_to_element(a);
+        const element_t *be = list_to_element(b);
+        // Compare based on ascend/descend order
+        bool de = descend ? strcmp(ae->value, be->value) > 0
+                          : strcmp(ae->value, be->value) < 0;
+        if (de) {
+            c->next = a;
+            a->prev = c;
+            a = a->next;
+        } else {
+            c->next = b;
+            b->prev = c;
+            b = b->next;
+        }
+        c = c->next;
+    }
+    // Link remaining nodes
+    if (a == ha) {
+        c->next = b;
+        b->prev = c;
+        hb->prev->next = ha;
+        ha->prev = hb->prev;
+    } else {
+        c->next = a;
+        a->prev = c;
+    }
+    // Let b become a NULL-queue
+    hb->next = hb;
+    hb->prev = hb;
+}
+
 /* Create an empty queue */
 struct list_head *q_new()
 {
@@ -507,44 +547,7 @@ int q_merge(struct list_head *head, bool descend)
         // Get the two queues to merge
         queue_contex_t *qa = list_to_qc(head->next);
         queue_contex_t *qb = list_to_qc(tmpb);
-        struct list_head *ha, *hb, *a, *b, *c;
-        ha = qa->q;
-        hb = qb->q;
-        a = ha->next;
-        b = hb->next;
-        c = ha;
-
-        // Merge two sorted queeus into ha
-        while (a != ha && b != hb) {
-            const element_t *ae = list_to_element(a);
-            const element_t *be = list_to_element(b);
-            // Compare based on ascend/descend order
-            bool de = descend ? strcmp(ae->value, be->value) > 0
-                              : strcmp(ae->value, be->value) < 0;
-            if (de) {
-                c->next = a;
-                a->prev = c;
-                a = a->next;
-            } else {
-                c->next = b;
-                b->prev = c;
-                b = b->next;
-            }
-            c = c->next;
-        }
-        // Link remaining nodes
-        if (a == ha) {
-            c->next = b;
-            b->prev = c;
-            hb->prev->next = ha;
-            ha->prev = hb->prev;
-        } else {
-            c->next = a;
-            a->prev = c;
-        }
-        // Let b become a NULL-queue
-        hb->next = hb;
-        hb->prev = hb;
+        merge_two(qa->q, qb->q, descend);
         // Move tmpb to the next queue
         tmpb = tmpb->next;
     }
