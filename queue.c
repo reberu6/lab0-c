@@ -36,8 +36,8 @@ static void merge_two(struct list_head *ha, struct list_head *hb, bool descend)
         const element_t *ae = list_to_element(a);
         const element_t *be = list_to_element(b);
         // Compare based on ascend/descend order
-        bool de = descend ? strcmp(ae->value, be->value) > 0
-                          : strcmp(ae->value, be->value) < 0;
+        bool de = descend ? strcmp(ae->value, be->value) >= 0
+                          : strcmp(ae->value, be->value) <= 0;
         if (de) {
             c->next = a;
             a->prev = c;
@@ -383,49 +383,55 @@ void q_sort(struct list_head *head, bool descend)
     if (!head || head->next == head || head->next->next == head)
         return;
 
-    int n = 0;
-    struct list_head *current = head;
-    while (current->next != head) {
-        current = current->next;
-        n++;
-    }
+    int n = q_size(head);
 
-    // Bubble sort
-    for (int i = n - 1; i > 0; i--) {
-        // Initialize pointers for each pass
-        struct list_head *a, *b, *h;
-        h = head;
-        a = h->next;
-        b = a->next;
-        bool swapped = false;
+    for (int size = 1; size < n; size *= 2) {
+        struct list_head *current = head->next;
 
-        // Compare and swap adjacent nodes
-        for (int j = 0; j < i; j++) {
-            // Move to the next pair
-            if (j) {
-                h = h->next;
-                a = h->next;
-                b = a->next;
+        while (current != head) {
+            // Left  queue
+            struct list_head *left_start = current;
+            int left_c = 0;
+            while (current != head && left_c < size) {
+                current = current->next;
+                left_c++;
             }
-            // Compare a & b's string
-            const element_t *ae = list_to_element(a);
-            const element_t *be = list_to_element(b);
-            bool swap = descend ? strcmp(ae->value, be->value) < 0
-                                : strcmp(ae->value, be->value) > 0;
+            struct list_head *left_end = current->prev;
 
-            // Swap
-            if (swap) {
-                h->next = b;
-                b->prev = h;
-                a->next = b->next;
-                b->next->prev = a;
-                b->next = a;
-                a->prev = b;
-                swapped = true;
+            // Right queue
+            struct list_head *right_start = current;
+            int right_c = 0;
+            while (current != head && right_c < size) {
+                current = current->next;
+                right_c++;
+            }
+            struct list_head *right_end = current->prev;
+
+            if (right_start != head) {
+                // Initailize for the merge_two
+                struct list_head *tmp_head = left_start->prev;
+                struct list_head head_a, head_b;
+                // Insert head at the left queue
+                head_a.next = left_start;
+                head_a.prev = left_end;
+                left_start->prev = &head_a;
+                left_end->next = &head_a;
+                // Insert head at the right queue
+                head_b.next = right_start;
+                head_b.prev = right_end;
+                right_start->prev = &head_b;
+                right_end->next = &head_b;
+
+                // Merge
+                merge_two(&head_a, &head_b, descend);
+
+                // Update link
+                tmp_head->next = head_a.next;
+                current->prev = head_a.prev;
+                head_a.next->prev = tmp_head;
+                head_a.prev->next = current;
             }
         }
-        if (!swapped)
-            break;
     }
 }
 
