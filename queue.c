@@ -12,18 +12,6 @@ static element_t *list_to_element(struct list_head *pos)
     return (element_t *) ((char *) pos - offsetof(element_t, list));
 }
 
-/* Count the number of the nodes */
-static int count_node(struct list_head *head)
-{
-    int n = 0;
-    struct list_head *current = head;
-    while (current->next != head) {
-        current = current->next;
-        n++;
-    }
-    return n;
-}
-
 static void merge_two(struct list_head *ha, struct list_head *hb, bool descend)
 {
     struct list_head *a, *b, *c;
@@ -83,8 +71,7 @@ void q_free(struct list_head *head)
     struct list_head *current = head->next;
     while (current != head) {
         struct list_head *next = current->next;
-        element_t *real_pos =
-            (element_t *) ((char *) current - offsetof(element_t, list));
+        element_t *real_pos = list_to_element(current);
         free(real_pos->value);
         free(real_pos);
         current = next;
@@ -97,11 +84,7 @@ bool q_insert_head(struct list_head *head, char *s)
 {
     if (!head)
         return false;
-    int len = 0;
-    while (*(s + len) != '\0') {
-        len++;
-    }
-    len++;
+    int len = strlen(s) + 1;
     char *value = malloc(len);
     if (!value)
         return false;
@@ -125,11 +108,7 @@ bool q_insert_tail(struct list_head *head, char *s)
 {
     if (!head)
         return false;
-    int len = 0;
-    while (*(s + len) != '\0') {
-        len++;
-    }
-    len++;
+    int len = strlen(s) + 1;
     char *value = malloc(len);
     if (!value)
         return false;
@@ -154,8 +133,7 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
     if (!head || (head->next == head))
         return NULL;
     head->next->next->prev = head;
-    element_t *tmp =
-        (element_t *) ((char *) head->next - offsetof(element_t, list));
+    element_t *tmp = list_to_element(head->next);
     head->next = head->next->next;
     tmp->list.next = NULL;
     tmp->list.prev = NULL;
@@ -176,8 +154,7 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
     if (!head || (head->next == head))
         return NULL;
     head->prev->prev->next = head;
-    element_t *tmp =
-        (element_t *) ((char *) head->prev - offsetof(element_t, list));
+    element_t *tmp = list_to_element(head->prev);
     head->prev = head->prev->prev;
     tmp->list.prev = NULL;
     tmp->list.next = NULL;
@@ -224,7 +201,7 @@ bool q_delete_mid(struct list_head *head)
     slow->next->prev = slow->prev;
 
     // delete the node
-    element_t *del = (element_t *) ((char *) slow - offsetof(element_t, list));
+    element_t *del = list_to_element(slow);
     free(del->value);
     free(del);
     return true;
@@ -322,12 +299,7 @@ void q_reverseK(struct list_head *head, int k)
         return;
 
     // Calculate the number of groups & nodes
-    int n = 0;
-    struct list_head *current = head->next;
-    while (current != head) {
-        current = current->next;
-        n++;
-    }
+    int n = q_size(head);
     int g = n / k;
 
     // Handle k > n
@@ -473,13 +445,7 @@ int q_ascend(struct list_head *head)
     }
 
     // Count number of the nodes
-    int n = 0;
-    struct list_head *current = head;
-    while (current->next != head) {
-        current = current->next;
-        n++;
-    }
-    return n;
+    return q_size(head);
 }
 
 /* Remove every node which has a node with a strictly greater value anywhere to
@@ -520,14 +486,9 @@ int q_descend(struct list_head *head)
     }
 
     // Count number of the nodes
-    int n = 0;
-    struct list_head *current = head;
-    while (current->next != head) {
-        current = current->next;
-        n++;
-    }
-    return n;
+    return q_size(head);
 }
+
 /* Convert a list_head pointer to its containing queue_contex_t pointer */
 static queue_contex_t *list_to_qc(struct list_head *pos)
 {
@@ -542,10 +503,10 @@ int q_merge(struct list_head *head, bool descend)
         return 0;
     // Single queue: do nothing, only return its node count
     if (head->next->next == head)
-        return count_node(list_to_qc(head->next)->q);
+        return q_size(list_to_qc(head->next)->q);
 
     // Count number of the queues to merge
-    int n = count_node(head);
+    int n = q_size(head);
 
     struct list_head *tmpb = head->next->next;
     // Merge n queues into the first queue
@@ -558,5 +519,5 @@ int q_merge(struct list_head *head, bool descend)
         tmpb = tmpb->next;
     }
     // Return the node count of the first queue
-    return count_node(list_to_qc(head->next)->q);
+    return q_size(list_to_qc(head->next)->q);
 }
